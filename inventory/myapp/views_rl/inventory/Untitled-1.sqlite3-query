@@ -1,0 +1,3 @@
+-- database: ../../../db.sqlite3
+
+SELECT myapp_inventory.medicine_price, myapp_medicine.medicine_name FROM myapp_inventory INNER JOIN myapp_medicine ON myapp_inventory.medicine_id_id = myapp_medicine.id
