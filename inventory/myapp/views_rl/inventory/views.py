@@ -58,7 +58,7 @@ def create_inventory(request):
             return JsonResponse(
                 {"message": "The Medicine is already Active"}, status=200
             )
-            
+
         return JsonResponse({"message": "Inventory Created Successfully"}, status=200)
 
     return JsonResponse({"message": "Method not allowed"}, status=405)
@@ -67,9 +67,29 @@ def create_inventory(request):
 def get_all_inventories(request):
     if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
-    query_set = Inventory.objects.all()
-    data = serializers.serialize("json", query_set)
-    return HttpResponse(data)
+    query_set = Inventory.objects.select_related("medicine_id").order_by("-created_at")
+
+    inventories = []
+    for inv in query_set:
+        inventories.append(
+            {
+                "id": inv.id,
+                "medicine_id": inv.medicine_id.id,
+                "medicine_name": inv.medicine_id.medicine_name,
+                "medicine_desc": inv.medicine_id.medicine_desc,
+                "medicine_measurement": inv.medicine_measurement,
+                "medicine_price": inv.medicine_price,
+                "medicine_type": inv.medicine_type,
+                "manufacturer": inv.manufacturer,
+                "expiration_date": inv.expiration_date,
+                "onActive": inv.onActive,
+                "quantity": inv.quantity,
+                "created_at": inv.created_at,
+                "deleted_at": inv.deleted_at,
+            }
+        )
+
+    return JsonResponse(inventories, status=200, safe=False)
 
 
 def get_single_inventory(request, inventory_id):
@@ -78,7 +98,7 @@ def get_single_inventory(request, inventory_id):
     try:
 
         inventory = Inventory.objects.select_related("medicine_id").get(pk=inventory_id)
-
+        (inventory)
         data = {
             "id": inventory.id,
             "medicine_id": inventory.medicine_id.id,
@@ -102,6 +122,7 @@ def get_single_inventory(request, inventory_id):
         message = {"status": "Error", "message": str(e), "code": 500}
         return handle_get_request(message)
 
+
 @csrf_exempt
 def update_inventory(request, inventory_id):
     if request.method == "PATCH":
@@ -111,7 +132,6 @@ def update_inventory(request, inventory_id):
             new_quantity = body.get("quantity")
             new_medicine_type = body.get("medicine_type")
             inventory = Inventory.objects.get(pk=inventory_id)
-            
 
             if new_medicine_price:
                 inventory.medicine_price = new_medicine_price
@@ -121,8 +141,9 @@ def update_inventory(request, inventory_id):
                 inventory.medicine_type = new_medicine_type
             inventory.save()
 
-                
-            return JsonResponse({"message" : "Inventory Updated Successfully"}, status=200)
+            return JsonResponse(
+                {"message": "Inventory Updated Successfully"}, status=200
+            )
 
         except Exception as e:
             message = {"status": "Error", "message": str(e), "code": 500}
@@ -130,15 +151,16 @@ def update_inventory(request, inventory_id):
     else:
         return HttpResponseNotAllowed(["PATCH"])
 
+
 @csrf_exempt
 def delete_inventory(request, inventory_id):
     if request.method == "DELETE":
-        try: 
+        try:
             inventory = Inventory.objects.get(pk=inventory_id)
         except Inventory.doesNotExist:
-             return JsonResponse({"message" : "Inventory Id does not Exist "}, status=500)
+            return JsonResponse({"message": "Inventory Id does not Exist "}, status=500)
         inventory.delete()
         return JsonResponse({"message": "Inventory Deleted Successfully"}, status=200)
-    
-    else: 
+
+    else:
         return HttpResponseNotAllowed(["DELETE"])
