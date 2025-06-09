@@ -1,7 +1,7 @@
 from django.http import JsonResponse, Http404, HttpResponseNotAllowed, HttpResponse
 from django.core import serializers
 from ...utils.upload.uploadImage import upload_helper, delete_image_helper
-from ...models import Medicine, ImageMultipleMedicine
+from ...models import Medicine, MultipleUpload
 from django.views.decorators.csrf import csrf_exempt
 import json
 

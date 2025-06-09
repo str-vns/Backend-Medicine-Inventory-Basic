@@ -21,7 +21,7 @@ URL_PATTERN = [
     'user',
     'medicine',
     'inventory',
-
+    'multipleUpload',
 ]
 
 print(URL_PATTERN)

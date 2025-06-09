@@ -58,13 +58,14 @@ class Inventory(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     deleted_at = models.DateTimeField(null=True, blank=True)
 
-class ImageMultipleMedicine(models.Model):
+class MultipleUpload(models.Model):
     id = models.CharField(primary_key=True, default=generate_random_string, editable=False, unique=True)  
     item_id = models.ForeignKey(Medicine, on_delete=models.CASCADE)
     public_id = models.CharField(max_length=3000, null=True, blank=True)
     original_name = models.CharField(max_length=3000, null=True, blank=True)
     url = models.CharField(max_length=10000, null=True, blank=True)
     created_at = models.DateTimeField(auto_now_add=True) 
+
 
 def clean(self):
     super().clean()

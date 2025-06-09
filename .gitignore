@@ -6,3 +6,5 @@ __pycache__/
 *.log
 media/
 staticfiles/
+uploadingfile-95e4b-firebase-adminsdk-31vx0-13a7fefc1e.json
+/inventory/myapp/migrations/

@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import User, Medicine, Inventory, ImageMultipleMedicine
+from .models import User, Medicine, Inventory, MultipleUpload
 # Register your models here.
 
 class InventoryInline(admin.TabularInline):
@@ -7,7 +7,7 @@ class InventoryInline(admin.TabularInline):
     extra = 1
 
 class ImageMedInline(admin.TabularInline):
-    model = ImageMultipleMedicine
+    model = MultipleUpload
     extra = 1
 
 # User
@@ -48,7 +48,7 @@ class InventoryAdmin(admin.ModelAdmin):
     ]
     list_display = ('medicine_id', 'medicine_price', 'quantity','medicine_type','medicine_measurement','manufacturer','expiration_date','onActive','created_at','deleted_at')
 
-class ImageMultipleMedicine(admin.ModelAdmin):
+class MultipleUploadAdmin(admin.ModelAdmin):
     fieldsets = [
         (None, {'fields' : ['item_id']}),
         (None, {'fields' : ['public_id']}),
@@ -56,13 +56,10 @@ class ImageMultipleMedicine(admin.ModelAdmin):
         (None, {'fields' : ['url']}),
         (None, {'fields' : ['created_at']}),
     ]
-    
-    
     list_display = ('item_id', 'public_id', 'original_name','url','created_at')
-    
-    
-    
+
+
 admin.site.register(User, UserAdmin)
-admin.site.register(Medicine, MedicineAdmin)  
+admin.site.register(Medicine, MedicineAdmin)
 admin.site.register(Inventory, InventoryAdmin)
-# admin.site.register(ImageMultipleMedicine, ImageMultipleMedicine)
+admin.site.register(MultipleUpload, MultipleUploadAdmin)
