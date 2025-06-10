@@ -2,6 +2,10 @@ This System is Backend for Basic Medicine Inventory
 
 I Build this project to just practicing to developing a backend using language python and django framework
 
+
+
+
+
 Create your own environment:
 python -m venv <environment_name>
 
