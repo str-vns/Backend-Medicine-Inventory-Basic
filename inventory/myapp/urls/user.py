@@ -12,4 +12,6 @@ urlpatterns = [
     path('user/delete/<str:user_id>', views.delete_user, name='delete_user'),
     #SingleUser
     path('user/profile/<str:user_id>', views.get_profile, name='get_profile'),
+    # Login
+    path('user/login', views.login_user, name='login_user'),
 ]

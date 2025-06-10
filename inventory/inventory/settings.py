@@ -40,6 +40,10 @@ INSTALLED_APPS = [
     "django.contrib.messages",
     "django.contrib.staticfiles",
     "corsheaders",
+    "rest_framework",
+    "rest_framework.authtoken",
+    
+
 ]
 
 MIDDLEWARE = [
@@ -148,4 +152,10 @@ CORS_ALLOW_HEADERS = (
     "content-type",
 )
 
-API_KEY =  str(os.getenv("API_KEY"))
+AUTH_USER_MODEL = "myapp.User"
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',  
+    ],
+}

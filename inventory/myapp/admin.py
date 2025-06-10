@@ -12,14 +12,22 @@ class ImageMedInline(admin.TabularInline):
 
 # User
 class UserAdmin(admin.ModelAdmin): 
-    fieldsets = [
-        (None, {'fields' : ['name']}),
-        (None, {'fields' : ['email']}),
-        (None, {'fields' : ['password']}),
-        (None, {'fields' : ['created_at']}),
-    ]
-    list_display = ('name', 'email', 'password','created_at')   
+     fieldsets = (
+        (None, {'fields' : ('email', 'password', 'is_staff', 'is_active', 'is_superuser')}),
+        ('Personal Info', {'fields' : ('first_name', 'last_name', 'image', 'public_id', 'original_name')}),
+        ('Permissions', {'fields' : ('user_permissions',)}), 
+    )
     
+     add_fieldsets = (
+        (None, {'fields' : ('email', 'password', 'is_staff', 'is_active', 'is_superuser')}),
+        ('Personal Info', {'fields' : ('first_name', 'last_name', 'image', 'public_id', 'original_name')}),
+        ('Permissions', {'fields' : ('user_permissions',)}), 
+    )
+    
+     search_fields = ('email', 'first_name', 'last_name')
+     ordering = ('email',)
+     filter_horizontal = ()
+
 # Medicine
 class MedicineAdmin(admin.ModelAdmin):
     fieldsets = [
