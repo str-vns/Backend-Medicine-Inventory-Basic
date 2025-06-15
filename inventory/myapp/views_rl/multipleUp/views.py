@@ -11,8 +11,10 @@ import json
 def createMultiImage (request):
     if request.method == 'POST':
         body = request.POST
+        if not body:
+            return JsonResponse({"message": "Please Provide all the required fields"}, status=400)
         images = request.FILES.getlist('img')
-       
+        print(images, "test")
         try:
             med_Id = Medicine.objects.get(pk=body.get("item_id"))
             

@@ -4,20 +4,34 @@ from ...utils.upload.uploadImage import upload_helper, delete_image_helper
 from ...models import Medicine, MultipleUpload
 from django.views.decorators.csrf import csrf_exempt
 from ...utils.upload.uploadImage import upload_helper
-from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+
+import logging
+logger = logging.getLogger(__name__)
 import json
 
 
 @csrf_exempt
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def create_medicine(request):
 
     if request.method == "POST":
         body = request.POST
+        if not body:
+            return JsonResponse(
+                {"message": "Please Provide all the required fields"}, status=400
+            )
+
         new_medicine_name = body.get("medicine_name")
         new_medicine_desc = body.get("medicine_desc")
-        images = request.FILES.getlist("img")
 
         try:
             if new_medicine_name is None or new_medicine_desc is None:
@@ -30,43 +44,68 @@ def create_medicine(request):
                 )
 
                 new_medicine.save()
-                # data = serializers.serialize('json', [new_medicine])
-                data = json.loads(serializers.serialize("json", [new_medicine]))
 
-                return HttpResponse(data, status=200)
+                data = {
+                    "id": new_medicine.id,
+                    "medicine_name": new_medicine.medicine_name,
+                    "medicine_desc": new_medicine.medicine_desc,
+                    "created_at": (
+                        new_medicine.created_at
+                        if hasattr(new_medicine, "created_at")
+                        else None
+                    ),
+                }
+                return JsonResponse(data, status=200)
 
         except Exception as e:
             return JsonResponse({"Error": str(e)}, status=500)
     else:
         return HttpResponseNotAllowed(["POST"])
 
+
 @csrf_exempt
-@api_view(['GET'])
+@api_view(["GET"])
 # @authentication_classes([TokenAuthentication])
 # @permission_classes([IsAuthenticated])
 def get_all_medicines(request):
-    
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-    query_set = MultipleUpload.objects.select_related("item_id").order_by("-created_at")
-    medicine_dict = {}
+    try:
+        if request.method != "GET":
+            return HttpResponseNotAllowed(["GET"])
+        query_set = MultipleUpload.objects.select_related("item_id").order_by("-created_at")
+        medicine_dict = {}
 
-    for med in query_set:
-        id_val = med.item_id.id
-        if id_val in medicine_dict:
-            medicine_dict[id_val]["images"].append(med.url)
-        else:
-            medicine_dict[id_val] = {
-                "id": med.item_id.id,
-                "medicine_name": med.item_id.medicine_name,
-                "medicine_desc": med.item_id.medicine_desc,
-                "images": [med.url],
-                "created_at": med.created_at,
-                "onActive": med.item_id.onActive,
-            }
-
-    medicine_list = list(medicine_dict.values())
-    return JsonResponse(medicine_list, status=200, safe=False)
+        for med in query_set:
+            id_val = med.item_id.id
+            print(id_val, "id_val")
+            if id_val in medicine_dict:
+                medicine_dict[id_val]["images"].append({
+                    "id": med.id,
+                    "url": med.url,
+                    "original_name": med.original_name,
+                    "public_id": med.public_id
+                })
+            else:
+                medicine_dict[id_val] = {
+                    "id": med.item_id.id,
+                    "medicine_name": med.item_id.medicine_name,
+                    "medicine_desc": med.item_id.medicine_desc,
+                    "images": [{
+                        "id": med.id,
+                        "url": med.url,
+                        "original_name": med.original_name,
+                        "public_id": med.public_id
+                    }],
+                    "created_at": med.created_at,
+                    "onActive": med.item_id.onActive,
+                }
+        medicine_list = list(medicine_dict.values())
+        return JsonResponse(medicine_list, status=200, safe=False)
+    except Exception as error:
+        logger.error(f'Error fetching medicines: {error}')
+        return JsonResponse(
+            {"Error": "Fetching Medicines Failed", "Information": str(error)},
+            status=500,
+        )
 
 
 @csrf_exempt
