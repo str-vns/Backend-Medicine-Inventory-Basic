@@ -11,6 +11,7 @@ from rest_framework.decorators import (
 )
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
+from django.forms.models import model_to_dict
 
 import logging
 logger = logging.getLogger(__name__)
@@ -24,7 +25,8 @@ import json
 def create_medicine(request):
 
     if request.method == "POST":
-        body = request.POST
+        body = request.data
+        print("Request body:", body)
         if not body:
             return JsonResponse(
                 {"message": "Please Provide all the required fields"}, status=400
@@ -76,7 +78,6 @@ def get_all_medicines(request):
 
         for med in query_set:
             id_val = med.item_id.id
-            print(id_val, "id_val")
             if id_val in medicine_dict:
                 medicine_dict[id_val]["images"].append({
                     "id": med.id,
@@ -109,11 +110,16 @@ def get_all_medicines(request):
 
 
 @csrf_exempt
+@api_view(["PATCH"])
 def get_Update_medicines(request, medicine_id):
     if request.method == "PATCH":
         try:
 
-            body = json.loads(request.body.decode("utf-8"))
+            body = request.data
+            if not body:
+             return JsonResponse(
+                {"message": "Please Provide all the required fields"}, status=400
+            )
             new_medicine_name = body.get("medicine_name")
             new_medicine_desc = body.get("medicine_desc")
 
@@ -123,12 +129,12 @@ def get_Update_medicines(request, medicine_id):
                 JsonResponse(
                     {"Error": "The id you provided does not Exist"}, status=404
                 )
-
+           
             if new_medicine_name:
                 query_set.medicine_name = new_medicine_name
             if new_medicine_desc:
                 query_set.medicine_desc = new_medicine_desc
-
+            
             query_set.save()
 
             return JsonResponse(
@@ -143,27 +149,51 @@ def get_Update_medicines(request, medicine_id):
 
 
 @csrf_exempt
+@api_view(["DELETE"])
 def delete_medicine(request, medicine_id):
+    print("delete_medicine called with medicine_id:", medicine_id)
     if request.method == "DELETE":
         try:
-            query_set = Medicine.objects.get(pk=medicine_id)
+            medicine = Medicine.objects.get(pk=medicine_id)
+            print("Medicine object found:", medicine)
         except Medicine.DoesNotExist:
-            JsonResponse({"Error": "The id you provided does not Exist"}, status=404)
+            return JsonResponse({"Error": "The id you provided does not Exist"}, status=404)
 
-        query_set.delete()
+        medicine.delete()
         return JsonResponse({"message": "Medicine Deleted Successfully"}, status=200)
     else:
         return HttpResponseNotAllowed(["DELETE"])
 
 
+@csrf_exempt
 def single_medicine(request, medicine_id):
-    if request.method == "GET":
-        try:
-            medicineId = Medicine.objects.get(pk=medicine_id)
-        except Medicine.DoesNotExist:
-            JsonResponse({"Error": "The id you provided does not Exist"}, status=404)
-
-        data = serializers.serialize("json", [medicineId])
-        return HttpResponse(data)
-    else:
+    if request.method != "GET":
         return HttpResponseNotAllowed(["GET"])
+
+    try:
+        medicine = Medicine.objects.get(pk=medicine_id)
+    except Medicine.DoesNotExist:
+        return JsonResponse({"error": "The ID you provided does not exist."}, status=404)
+
+    query_set = MultipleUpload.objects.select_related("item_id") \
+        .filter(item_id=medicine) \
+        .order_by("-created_at")
+
+    medicine_dict = {
+        "id": medicine.id,
+        "medicine_name": medicine.medicine_name,
+        "medicine_desc": medicine.medicine_desc,
+        "onActive": medicine.onActive,
+        "created_at": medicine.created_at,
+        "images": [],
+    }
+
+    for img in query_set:
+        medicine_dict["images"].append({
+            "id": img.id,
+            "url": img.url,
+            "original_name": img.original_name,
+            "public_id": img.public_id
+        })
+
+    return JsonResponse(medicine_dict, safe=False)
