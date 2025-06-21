@@ -41,7 +41,14 @@ def upload_helper(image, path):
 
 
 def delete_image_helper(image, path):
+    if not image or not path:
+        return HttpResponse("Image or path not provided", status=400)
 
-    storage = firebaseConfig.storage()
-    storage.child(f"images/{path}/{image}").delete()
-    return HttpResponse("Image deleted successfully")
+    try:
+        storage = firebaseConfig.storage()
+        full_path = f"{path}/{image}"
+        storage.delete(full_path, None)
+        return HttpResponse("Image deleted successfully")
+    except Exception as e:
+        print("Delete error:", e)
+        return HttpResponse(f"Failed to delete image: {str(e)}", status=500)
