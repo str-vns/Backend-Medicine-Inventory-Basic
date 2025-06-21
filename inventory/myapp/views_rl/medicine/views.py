@@ -11,7 +11,6 @@ from rest_framework.decorators import (
 )
 from rest_framework.authentication import TokenAuthentication
 from rest_framework.permissions import IsAuthenticated
-from django.forms.models import model_to_dict
 
 import logging
 logger = logging.getLogger(__name__)

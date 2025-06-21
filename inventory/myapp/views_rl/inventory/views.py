@@ -1,5 +1,5 @@
 from django.http import JsonResponse, Http404, HttpResponseNotAllowed, HttpResponse
-from ...models import Inventory, Medicine
+from ...models import Inventory, Medicine, MultipleUpload
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 from ...utils.messageHandler import handle_get_request
@@ -55,9 +55,7 @@ def create_inventory(request):
         if Medicine.objects.filter(onActive=False, pk=body.get("medicine_id")).exists():
             Medicine.objects.filter(pk=body.get("medicine_id")).update(onActive=True)
         else:
-            return JsonResponse(
-                {"message": "The Medicine is already Active"}, status=200
-            )
+            print("Medicine is already active")
 
         return JsonResponse({"message": "Inventory Created Successfully"}, status=200)
 
@@ -69,14 +67,78 @@ def get_all_inventories(request):
         return HttpResponseNotAllowed(["GET"])
     query_set = Inventory.objects.select_related("medicine_id").order_by("-created_at")
 
-    inventories = []
+    inventories = {}
+
     for inv in query_set:
-        inventories.append(
+        id_val = inv.medicine_id.id
+        images = MultipleUpload.objects.filter(item_id=inv.medicine_id).order_by("-created_at")
+        images_list = [
             {
-                "id": inv.id,
+                "id": img.id,
+                "url": img.url,
+                "original_name": img.original_name,
+                "public_id": img.public_id,
+            }
+            for img in images
+        ]
+            
+        inventory_data = {
+            "id": inv.id,
+            "medicine_measurement": inv.medicine_measurement,
+            "medicine_price": inv.medicine_price,
+            "medicine_type": inv.medicine_type,
+            "manufacturer": inv.manufacturer,
+            "expiration_date": inv.expiration_date,
+            "onActive": inv.onActive,
+            "quantity": inv.quantity,
+            "created_at": inv.created_at,
+        }
+        if id_val in inventories:
+            inventories[id_val]["inventories"].append(inventory_data)
+        else:
+            inventories[id_val] = {
                 "medicine_id": inv.medicine_id.id,
                 "medicine_name": inv.medicine_id.medicine_name,
                 "medicine_desc": inv.medicine_id.medicine_desc,
+                "images": images_list,
+                "inventories": [inventory_data],
+            }
+
+    inventory = list(inventories.values())
+    return JsonResponse(inventory, status=200, safe=False)
+
+
+def get_single_inventory(request, inventory_id):
+    if request.method != "GET":
+        return HttpResponseNotAllowed(["GET"])
+    try:
+        # Get all inventories for this medicine_id
+        inventory_qs = Inventory.objects.select_related("medicine_id").filter(medicine_id=inventory_id).order_by("-created_at")
+        if not inventory_qs.exists():
+            return JsonResponse(
+                {"status": "Error", "message": "No inventories found for this medicine_id", "code": 404},
+                status=404
+            )
+
+        # Get the medicine object (all inventories have the same medicine)
+        medicine = inventory_qs[0].medicine_id
+
+        # Get all images for this medicine
+        images = MultipleUpload.objects.filter(item_id=medicine).order_by("-created_at")
+        images_list = [
+            {
+                "id": img.id,
+                "url": img.url,
+                "original_name": img.original_name,
+                "public_id": img.public_id,
+            }
+            for img in images
+        ]
+
+        inventories_list = []
+        for inv in inventory_qs:
+            inventories_list.append({
+                "id": inv.id,
                 "medicine_measurement": inv.medicine_measurement,
                 "medicine_price": inv.medicine_price,
                 "medicine_type": inv.medicine_type,
@@ -85,38 +147,16 @@ def get_all_inventories(request):
                 "onActive": inv.onActive,
                 "quantity": inv.quantity,
                 "created_at": inv.created_at,
-                "deleted_at": inv.deleted_at,
-            }
-        )
+            })
 
-    return JsonResponse(inventories, status=200, safe=False)
-
-
-def get_single_inventory(request, inventory_id):
-    if request.method != "GET":
-        return HttpResponseNotAllowed(["GET"])
-    try:
-
-        inventory = Inventory.objects.select_related("medicine_id").get(pk=inventory_id)
-        (inventory)
-        data = {
-            "id": inventory.id,
-            "medicine_id": inventory.medicine_id.id,
-            "medicine_name": inventory.medicine_id.medicine_name,
-            "medicine_desc": inventory.medicine_id.medicine_desc,
-            "medicine_measurement": inventory.medicine_measurement,
-            "medicine_price": inventory.medicine_price,
-            "medicine_type": inventory.medicine_type,
-            "manufacturer": inventory.manufacturer,
-            "expiration_date": inventory.expiration_date,
-            "medicine_type": inventory.medicine_type,
-            "onActive": inventory.onActive,
-            "quantity": inventory.quantity,
-            "created_at": inventory.created_at,
-            "deleted_at": inventory.deleted_at,
+        result = {
+            "medicine_id": medicine.id,
+            "medicine_name": medicine.medicine_name,
+            "medicine_desc": medicine.medicine_desc,
+            "images": images_list,
+            "inventories": inventories_list,
         }
-
-        return JsonResponse(data, status=200, safe=False)
+        return JsonResponse(result, status=200, safe=False)
 
     except Exception as e:
         message = {"status": "Error", "message": str(e), "code": 500}
