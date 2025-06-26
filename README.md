@@ -14,16 +14,16 @@ It is built using **Python** and the **Django** framework, primarily as a **prac
   
 ##⚙️ Setup Instructions
 ###🔧 Create Your Virtual Environment
-    python -m venv <environment_name>
+     - python -m venv <environment_name>
 
 ### ▶️ Activate the Environment
  Windows:
-  <environment_name>\Scripts\activate
+  - <environment_name>\Scripts\activate
  Linux / macOS:
-  source <environment_name>/bin/activate
+  - source <environment_name>/bin/activate
 
 ### 📦 Install Django
- pip install django
+ - pip install django
 ### 🛠️ Create a Django App
 - python manage.py startapp <app_name>
 
