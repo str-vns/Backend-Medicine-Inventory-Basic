@@ -5,6 +5,19 @@ It is built using **Python** and the **Django** framework, primarily as a **prac
 
 📌 Note: This is a practice project. More features may be added in the future as I continue learning.
 
+### 🖥️ Programming Languages
+- **Python** – Main language for backend development
+
+### 🧪 Frameworks & Libraries
+- **Django** – Web framework for building backend logic and APIs
+- **Django REST Framework (DRF)**
+
+### 🛠️ Tools & Utilities
+- **Postman** – API testing
+- **VS Code** – Code editor
+- **Git** – Version control
+- **GitHub** – Code repository
+  
 ## 🎯 Features
 
 - 🧾 Add, update, and delete medicine items
