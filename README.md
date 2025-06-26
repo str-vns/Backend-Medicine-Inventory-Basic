@@ -9,8 +9,10 @@ It is built using **Python** and the **Django** framework, primarily as a **prac
 - **Python** – Main language for backend development
 
 ### 🧪 Frameworks & Libraries
-- **Django** – Web framework for building backend logic and APIs
-- **Django REST Framework (DRF)**
+- **Django** – High-level Python web framework for building backend logic and web applications
+- **Django REST Framework (DRF)** – Powerful and flexible toolkit for building Web APIs in Django
+- **Firebase** – Used for storing and managing uploaded images (via Firebase Storage)
+- **SQLite** – Lightweight relational database used as the default for development
 
 ### 🛠️ Tools & Utilities
 - **Postman** – API testing
