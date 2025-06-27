@@ -14,4 +14,5 @@ urlpatterns = [
     path('user/profile/<str:user_id>', views.get_profile, name='get_profile'),
     # Login
     path('user/login', views.login_user, name='login_user'),
+    path('user/logout', views.logout_user, name='logout_user'),
 ]

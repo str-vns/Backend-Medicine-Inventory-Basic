@@ -3,14 +3,24 @@ from ...models import Inventory, Medicine, MultipleUpload
 from django.views.decorators.csrf import csrf_exempt
 from django.core import serializers
 from ...utils.messageHandler import handle_get_request
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+    permission_classes,
+)
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 import json
 
 
 @csrf_exempt
+@api_view(["POST"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def create_inventory(request):
     if request.method == "POST":
         body = json.loads(request.body.decode("utf-8"))
-
+        print("Received body:", body.get("quantity"), body.get("medicine_price"))
         try:
             med_Id = Medicine.objects.get(pk=body.get("medicine_id"))
         except Medicine.DoesNotExist:
@@ -71,7 +81,9 @@ def get_all_inventories(request):
 
     for inv in query_set:
         id_val = inv.medicine_id.id
-        images = MultipleUpload.objects.filter(item_id=inv.medicine_id).order_by("-created_at")
+        images = MultipleUpload.objects.filter(item_id=inv.medicine_id).order_by(
+            "-created_at"
+        )
         images_list = [
             {
                 "id": img.id,
@@ -81,7 +93,7 @@ def get_all_inventories(request):
             }
             for img in images
         ]
-            
+
         inventory_data = {
             "id": inv.id,
             "medicine_measurement": inv.medicine_measurement,
@@ -105,6 +117,7 @@ def get_all_inventories(request):
             }
 
     inventory = list(inventories.values())
+
     return JsonResponse(inventory, status=200, safe=False)
 
 
@@ -113,17 +126,43 @@ def get_single_inventory(request, inventory_id):
         return HttpResponseNotAllowed(["GET"])
     try:
         # Get all inventories for this medicine_id
-        inventory_qs = Inventory.objects.select_related("medicine_id").filter(medicine_id=inventory_id).order_by("-created_at")
+        inventory_qs = (
+            Inventory.objects.select_related("medicine_id")
+            .filter(medicine_id=inventory_id)
+            .order_by("-created_at")
+        )
         if not inventory_qs.exists():
-            return JsonResponse(
-                {"status": "Error", "message": "No inventories found for this medicine_id", "code": 404},
-                status=404
-            )
+            query_set = Medicine.objects.filter(pk=inventory_id)
+            if not query_set.exists():
+                return JsonResponse(
+                    {
+                        "status": "Error",
+                        "message": "Medicine does not exist",
+                        "code": 404,
+                    },
+                    status=404,
+                )
+                
+            med = query_set.first()
+            result = {
+                "medicine_id": med.id,
+                "medicine_name": med.medicine_name,
+                "medicine_desc": med.medicine_desc,
+                "images": [
+                    {
+                        "id": img.id,
+                        "url": img.url,
+                        "original_name": img.original_name,
+                        "public_id": img.public_id,
+                    }
+                    for img in MultipleUpload.objects.filter(item_id=med).order_by("-created_at")
+                ],
+                "inventories": [],
+            }
+            return JsonResponse(result, status=200, safe=False)
 
-        # Get the medicine object (all inventories have the same medicine)
         medicine = inventory_qs[0].medicine_id
 
-        # Get all images for this medicine
         images = MultipleUpload.objects.filter(item_id=medicine).order_by("-created_at")
         images_list = [
             {
@@ -137,17 +176,19 @@ def get_single_inventory(request, inventory_id):
 
         inventories_list = []
         for inv in inventory_qs:
-            inventories_list.append({
-                "id": inv.id,
-                "medicine_measurement": inv.medicine_measurement,
-                "medicine_price": inv.medicine_price,
-                "medicine_type": inv.medicine_type,
-                "manufacturer": inv.manufacturer,
-                "expiration_date": inv.expiration_date,
-                "onActive": inv.onActive,
-                "quantity": inv.quantity,
-                "created_at": inv.created_at,
-            })
+            inventories_list.append(
+                {
+                    "id": inv.id,
+                    "medicine_measurement": inv.medicine_measurement,
+                    "medicine_price": inv.medicine_price,
+                    "medicine_type": inv.medicine_type,
+                    "manufacturer": inv.manufacturer,
+                    "expiration_date": inv.expiration_date,
+                    "onActive": inv.onActive,
+                    "quantity": inv.quantity,
+                    "created_at": inv.created_at,
+                }
+            )
 
         result = {
             "medicine_id": medicine.id,
@@ -156,6 +197,7 @@ def get_single_inventory(request, inventory_id):
             "images": images_list,
             "inventories": inventories_list,
         }
+
         return JsonResponse(result, status=200, safe=False)
 
     except Exception as e:
@@ -164,6 +206,9 @@ def get_single_inventory(request, inventory_id):
 
 
 @csrf_exempt
+@api_view(["PATCH"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def update_inventory(request, inventory_id):
     if request.method == "PATCH":
         try:
@@ -171,6 +216,12 @@ def update_inventory(request, inventory_id):
             new_medicine_price = body.get("medicine_price")
             new_quantity = body.get("quantity")
             new_medicine_type = body.get("medicine_type")
+            new_measurement = body.get("medicine_measurement")
+            new_medicine_type = body.get("medicine_type")
+            new_medicine_measurement = body.get("medicine_measurement")
+            new_manufacturer = body.get("manufacturer")
+            new_expiration_date = body.get("expiration_date")
+
             inventory = Inventory.objects.get(pk=inventory_id)
 
             if new_medicine_price:
@@ -179,6 +230,14 @@ def update_inventory(request, inventory_id):
                 inventory.quantity = new_quantity
             if new_medicine_type:
                 inventory.medicine_type = new_medicine_type
+            if new_measurement:
+                inventory.medicine_measurement = new_measurement
+            if new_medicine_measurement:
+                inventory.medicine_measurement = new_medicine_measurement
+            if new_manufacturer:
+                inventory.manufacturer = new_manufacturer
+            if new_expiration_date:
+                inventory.expiration_date = new_expiration_date
             inventory.save()
 
             return JsonResponse(
@@ -193,11 +252,14 @@ def update_inventory(request, inventory_id):
 
 
 @csrf_exempt
+@api_view(["DELETE"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def delete_inventory(request, inventory_id):
     if request.method == "DELETE":
         try:
             inventory = Inventory.objects.get(pk=inventory_id)
-        except Inventory.doesNotExist:
+        except Inventory.DoesNotExist:
             return JsonResponse({"message": "Inventory Id does not Exist "}, status=500)
         inventory.delete()
         return JsonResponse({"message": "Inventory Deleted Successfully"}, status=200)

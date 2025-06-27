@@ -9,10 +9,15 @@ from rest_framework.decorators import (
     authentication_classes,
     permission_classes,
 )
+from rest_framework.authentication import TokenAuthentication
+from rest_framework.permissions import IsAuthenticated
 import traceback
 import json
 
 @csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def createMultiImage (request):
     if request.method == 'POST':
         body = request.POST
@@ -43,6 +48,8 @@ def createMultiImage (request):
       
 @csrf_exempt  
 @api_view(['DELETE'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def deleteMultiImage(request, id):
     if request.method == 'DELETE':
         path = request.GET.get('path')

@@ -172,18 +172,24 @@ def get_profile(request, user_id):
 @csrf_exempt
 def login_user(request):
     if request.method == "POST":
-        body = request.POST
+        body = json.loads(request.body.decode("utf-8"))
+        print("Body: ", body)
         email = body.get("email")
         password = body.get("password")
         print(email, password)
         if email is None or password is None:
+            print("Email or Password is None")
             return JsonResponse(
                 {"message": "Please provide all the required fields"}, status=400
             )
 
         user = authenticate(email=email, password=password)
+        if user is None:
+            print("User is None")
+            return JsonResponse({"message": "Invalid credentials"}, status=400)
         
         if user is user.is_active == False:
+            print("User is not active")
             return JsonResponse({"message": "Your Account is Disable please contact Admin"}, status=403)
         
         if user is not None:
@@ -221,3 +227,20 @@ def login_user(request):
     else:
         return HttpResponseNotAllowed(["POST"])
 
+@csrf_exempt
+@api_view(['POST'])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
+def logout_user(request):
+    if request.method == "POST":
+        request = json.loads(request.body.decode("utf-8"))
+        ids = request.get("user_id")
+        try:
+            token = Token.objects.get(user_id=ids)
+            print("Token: ", token)
+            token.delete()
+            return JsonResponse({"message": "User logged out successfully"}, status=200)
+        except Token.DoesNotExist:
+            return JsonResponse({"message": "User is not logged in"}, status=400)
+    else:
+        return HttpResponseNotAllowed(["POST"]) 

@@ -110,6 +110,8 @@ def get_all_medicines(request):
 
 @csrf_exempt
 @api_view(["PATCH"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def get_Update_medicines(request, medicine_id):
     if request.method == "PATCH":
         try:
@@ -149,6 +151,8 @@ def get_Update_medicines(request, medicine_id):
 
 @csrf_exempt
 @api_view(["DELETE"])
+@authentication_classes([TokenAuthentication])
+@permission_classes([IsAuthenticated])
 def delete_medicine(request, medicine_id):
     print("delete_medicine called with medicine_id:", medicine_id)
     if request.method == "DELETE":
